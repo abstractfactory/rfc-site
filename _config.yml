@@ -4,4 +4,4 @@ redcarpet:
 permalink: pretty
 baseurl:
 url: http://rfc.abstractfactory.io
-exclude: ['README.md']
+exclude: ['README.md', 'github_to_jekyll.py']
