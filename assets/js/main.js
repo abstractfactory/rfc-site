@@ -21,7 +21,7 @@ $(function(){
 			display: 'block'
 		},
 	    load: {
-	      filter: '.raw, .draft, .retired',
+	      filter: '.draft, .retired',
 	      sort: 'myorder:desc'
 	    },
 	    controls: {
