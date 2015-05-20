@@ -1,0 +1,152 @@
+# Cascading Metadata
+
+An extension to Open Metadata to support the notion of inheritance.
+
+![](../images/12/title.png)
+
+* Name: http://rfc.abstractfactory.io/spec/12
+* Editor: Marcus Ottosson <marcus@abstractfactory.io>
+* Related: RFC10
+* State: draft
+
+Copyright and Language can be found in RFC1
+
+# Change Process
+
+This document is governed by the [Consensus-Oriented Specification System](http://www.digistan.org/spec:1/COSS) (COSS).
+
+# Goal
+
+> Add missing, replace existing (tm)
+
+Open Metadata is a method for associating generic data with folders on your hard-drive. This document describes a method that defines each folder as an object within an inheritance-tree; each folder inheriting from its parent.
+
+The result of this is a cascading behaviour in attributes from top to bottom within a hierarchy.
+
+For motivation and use of cascading data, head over to Steve Yegge's inspiration post on the [Universal Design Pattern][]
+
+### When to use
+
+When is inheritance in information intuitive? Well, consider configuration files of software. Consider Sublime Text. In Sublime, you have Configuration Files (CF) and then you have User Configuration Files (UCF). The information within UCF augments and, perhaps more importantly, overrides the CF. You may copy certain information over from the CF into the UCF in order to make alterations and you may add your own configuration that would augment the original configuration.
+
+### When not to use
+
+Inheritance is not suited to all types of information. Consider the description of the folder "my mp3 collection". This description is singular and does not apply to any descenants in a hierarchy; like "best of bon jovi".
+
+# Architecture
+
+Cascading Metadata extends Open Metadata with the `inherit` method. Open Metadata defines `om.pull()` as a means of reading from disk; `om.inherit()` then pulls data from both current and ascending folders.
+
+```python
+>>> config = Location(r'c:\users\marcus\sublime')
+>>> config.plugins = ['spell_correction']
+```
+
+With `inherit()`, each folder may be thought of as a subclass of its parent, passing on and potentially overriding information from parent to child; just as you would expect from regular inheritance in Object-oriented languages such as Python or C++.
+
+```python
+>>> plugins = Variable(r'plugins', parent=config)
+>>> inherit(plugins)
+>>> plugins.value = ['my_custom_plugin']
+>>> plugins.value
+['spell_correction', 'my_custom_plugin']
+```
+
+## [Liskov Substitution Principle][]
+
+Inheritance is additive. It may be easier to think of inheritance as being cascading. Cascading inheritance enforces the LSP in that however you edit children, a parent may always be replaced by its child.
+
+This is an important concept in a progammable hierarchy and one that is enforced in the design of Cascading Metadata. If a child were to be given the ability to break the LSP, then you could never be sure at which point in your hierarchy your code will fail.
+
+```python
+>>> remove(plugins)
+```
+
+## Designed for inheritance
+
+In the above example, how would you go about *removing* or *altering* inherited information? Consider the following example
+
+```python
+>>> project = Location('/project')
+>>> executables = Variable('executables', parent=project)
+>>> executables.value
+['maya', 'houdini']
+```
+
+Underneath 'project' we have 'shot5', but we don't want 'maya' to be part of 'shot5', so what do we do?
+
+```python
+>>> executables = Variable('executables', parent=config)
+>>> executables.value
+{'maya': True, 'houdini': True}
+```
+
+Now both 'maya' and 'houdini' have a bool value specifying whether or not they are active. Inactivating any executable is now a matter of:
+
+```python
+>>> shot = Location('/project/shot5')
+>>> executables = Variable('executables', parent=shot)
+>>> executables.value = {'maya': False}
+>>> executables.value
+{'maya': False, 'houdini': True}
+```
+
+### Selective inheritance
+
+What about situations where you aren't looking to inherit *every* member of location? The following is the recommended way with which to retrieve metadata in an inheritance manner as it greatly decreases the amount of reading done in each query.
+
+```python
+>>> shot = Location('/project/shot5')
+>>> executables = Variable('executables', parent=shot)
+>>> inherit(executables)
+>>> executables.value
+{'maya': False, 'houdini': True}
+```
+
+### Shallow inheritance
+
+How about situations where you may only be interested in an immediate parent, and not any of the parents above?
+
+```python
+>>> shot = Location('/project/shot5')
+>>> inherit(shot, depth=1)
+>>> shot.value = 'c'
+>>> shot.value
+['b', 'c']
+```
+
+### Modified Inheritance Tree
+
+How about situations where you'd prefer inheriting from locations that isn't within the immediate parenthood?
+
+That can bee achieved by either modifying `bases`, the list of immediate parents - i.e., superclasses - or modifying `mro`, the method resolution order - i.e. the entire parenthood until `depth`.
+
+#### 1. Multiple inheritance
+
+```python
+>>> config_a = Location('/project/shot5/configA')
+>>> config_b = Location('/project/shot4/configB')
+>>> config_a.bases.append(config_b)
+>>> config_a.bases
+[Location('configA'), Location('configB')]
+>>> config_a.bases.pop()
+>>> config_a += config_b  # Convenience method
+>>> config_a.bases
+[Location('configA'), Location('configB')]
+```
+Here, `config_a` is also inheriting from `config_b`, even though they are within different hierarchies. The original tree remains unmodified, much like multiple inheritance in object-oriented programming languages, but an additional "superclass" is added to the original which will act identical to its immediate parent in terms of what is overridden/appended.
+
+#### 2. Method Resolution Order
+
+
+```python
+>>> om.inherit(config_a, pull=False)
+>>> config_a.mro
+[Location('shot5'), Location('project')]
+>>> config_a.mro.insert(0, config_b)
+>>> config_a.mro
+[Location('configB'), Location('shot5'), Location('project')]
+```
+
+[Liskov Substitution Principle]: http://en.wikipedia.org/wiki/Liskov_substitution_principle
+[universal design pattern]: http://steve-yegge.blogspot.co.uk/2008/10/universal-design-pattern.html

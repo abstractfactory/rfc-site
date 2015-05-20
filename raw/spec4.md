@@ -1,0 +1,82 @@
+# Temporal Versioning Pattern
+
+This document describes a compromise RFC2 and RFC3 supporting the notion of past, present and future.
+
+* Name: http://rfc.abstractfactory.io/spec/4
+* Editor: Marcus Ottosson <marcus@abstractfactory.io>
+* Tags: versioning
+* Related: RFC2, RFC3, RFC33
+* State: draft
+
+Copyright and Language can be found in RFC1
+
+# Change Process
+
+This document is governed by the [Consensus-Oriented Specification System](http://www.digistan.org/spec:1/COSS) (COSS).
+
+# Goal
+
+The Temporal Versioning Pattern is a compromise between RFC2 and RFC3 providing a time-aware `state`.
+
+The benefit of [Monolithic Versioning][] lies in the automatic-ness of its operation, whilst the benefit of [Polylithic Versioning][] resides in the amount of control given to the user.
+
+Temporal Versioning then proposes an alternative encapsulating the benefits of both.
+
+### Use-case
+
+This pattern fits scenarious where updates are most often kept up to date and `state` not often required, but still kept out of back-up or peace-of-mind concerns.
+
+# Architecture
+
+`state` may be classified as being either `historical` or `current`. Furthermore, `state` may be classified as being either `latest` or `recommended`.
+
+Both `historical` and `current` includes a `timestamp`.
+
+Like Monolithic Versioning, a DOCUMENT is continuously overwritten. Changes are tracked separately and with it a `timestamp`. The `timestamp` may then be used in retrieving a global `state` for each DOCUMENT residing within the `range` specified.
+
+```python
+database
+|-- document1
+|-- document2
+|-- document3
+|
+|-- .history
+    |-- document1&2014-03-01 21:12
+    |-- document1&2014-03-01 21:24
+    |-- document1&2014-03-02 12:56
+    |
+    |-- document2&2014-03-01 20:10
+    |-- document2&2014-03-01 21:04
+    |-- document2&2014-03-03 10:22
+    |
+    |-- document3&2014-01-02 19:10
+    |-- document3&2014-01-06 19:01
+    |-- document3&2014-02-03 09:36
+```
+
+Here, three document exists, each with three instances of `state` stored in ".history", each `state` stored with a `timestamp`.
+
+A DOCUMENT referencing another DOCUMENT then stores a `timestamp` at the point of reference.
+
+```python
+ _____________
+|             |
+|  document1  |
+|_____________|
+       |
+ ______|______
+|             |
+|  document2  |  --> document1 referenced at 2014-03-02 at 10:05
+|_____________|      i.e. document1&2014-03-01 21:24
+       |
+ ______|______
+|             |
+|  document3  |  --> document2 referencet at 2014-03-02 at 10:05
+|_____________|      i.e. document2&2014-03-01 21:04
+
+``` 
+
+`document2` and `document3` will be continuously updated as per Monolithic Versioning, but using the metadata stored about the time at which the initial reference took place may at any point in time resolve what the initial references were.
+
+[Monolithic Versioning]: http://rfc.abstractfactory.io/spec/3
+[Polylithic Versioning]: http://rfc.abstractfactory.io/spec/2

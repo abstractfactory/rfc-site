@@ -1,0 +1,31 @@
+# Polylithic Versioning Pattern
+
+This document describes a method of tracking change involving multiple documents.
+
+* Name: http://rfc.abstractfactory.io/spec/2
+* Editor: Marcus Ottosson <marcus@abstractfactory.io>
+* Tags: versioning
+* Related: RFC3, RFC4, RFC33
+* State: draft
+
+Copyright and Language can be found in RFC1
+
+# Change Process
+
+This document is governed by the [Consensus-Oriented Specification System](http://www.digistan.org/spec:1/COSS) (COSS).
+
+# Goal
+
+The goal of the Polylithic Versioning Pattern is to maximise control whilst minimising the rate of error at the cost of additional steps required in keeping a hierarchy of tasks up to date.
+
+# Architecture
+
+Polylithic Versioning, also known as Immutable Versioning, is the act of incrementally saving DOCUMENT; each increment providing `state` to said DOCUMENT.
+
+As opposed to [Monolithic Versioning][] (RFC3), changes are made `explicit` and require manual intervention when it comes time to perform an `update`.
+
+# In-house
+
+[Consensus-Oriented Specification System (COSS)]: http://www.digistan.org/spec:1/COSS
+[RFC 2119]: http://tools.ietf.org/html/rfc2119
+[versioning]: http://en.wikipedia.org/wiki/Software_versioning
